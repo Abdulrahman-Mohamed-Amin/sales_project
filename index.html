@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>برنامج المشتريات والمبيعات</title>
+<link rel="icon" href="logo_gold.png" />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gold: #c9a24b;
+    --gold-dark: #a8842f;
+    --gold-soft: #f7f0df;
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --surface-2: #f7f9fc;
+    --border: #e6e9ef;
+    --text: #1f2530;
+    --muted: #7b828f;
+    --green: #1faa59;
+    --red: #d64545;
+    --blue: #2f7fd6;
+    --shadow: 0 6px 24px rgba(20,30,50,.06);
+    --shadow-lg: 0 10px 40px rgba(20,30,50,.10);
+    --aside-w: 260px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* القائمة الجانبية على اليمين */
+  aside {
+    width: var(--aside-w);
+    background: var(--surface);
+    border-inline-start: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh;
+    flex-shrink: 0;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px;
+    padding: 22px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand img { height: 40px; }
+  .brand span { font-size: 16px; font-weight: 900; color: var(--gold-dark); line-height: 1.3; }
+  .nav { padding: 16px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .nav-link {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; border-radius: 12px; cursor: pointer;
+    color: var(--muted); font-weight: 700; font-size: 15px;
+    background: transparent; border: none; font-family: inherit;
+    text-align: right; transition: .18s; width: 100%;
+  }
+  .nav-link .ico { font-size: 18px; width: 22px; text-align: center; }
+  .nav-link:hover { background: var(--gold-soft); color: var(--gold-dark); }
+  .nav-link.active { background: var(--gold); color: #fff; box-shadow: 0 4px 14px rgba(201,162,75,.35); }
+  .nav-foot { padding: 16px 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+
+  /* المحتوى على الشمال */
+  main { flex: 1; padding: 28px 32px; min-width: 0; }
+  .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .page-head h1 { font-size: 22px; font-weight: 900; }
+  .page-head .sub { color: var(--muted); font-size: 14px; }
+
+  /* بطاقات الملخص */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow);
+    position: relative; overflow: hidden; transition: .18s;
+  }
+  .stat:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); border-color: var(--gold); }
+  .stat::before { content:''; position:absolute; inset-inline-start:0; top:0; bottom:0; width:5px; }
+  .stat.buy::before { background: var(--blue); }
+  .stat.sell::before { background: var(--green); }
+  .stat.exp::before { background: var(--red); }
+  .stat.profit::before { background: var(--gold); }
+  .stat .label { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+  .stat .value { font-size: 23px; font-weight: 900; }
+  .stat .unit { font-size: 13px; color: var(--muted); font-weight: 400; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; box-shadow: var(--shadow); overflow: hidden;
+  }
+  .card-head {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .card-head h2 { font-size: 17px; font-weight: 700; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* شريط الفلترة */
+  .filter-bar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+    padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface-2);
+  }
+  .filter-bar .fg { display: flex; flex-direction: column; gap: 4px; }
+  .filter-bar .fg label { font-size: 11px; color: var(--muted); font-weight: 700; }
+  .filter-bar input, .filter-bar select { padding: 8px 11px; font-size: 14px; height: 38px; }
+  .filter-bar .search { min-width: 180px; }
+  .btn-clear {
+    height: 38px; padding: 0 16px; background: var(--surface); border: 1px solid var(--border);
+    color: var(--muted); border-radius: 10px; font-size: 13px;
+  }
+  .btn-clear:hover { border-color: var(--red); color: var(--red); background: #fdeaea; }
+  .filter-info { margin-inline-start: auto; font-size: 13px; color: var(--muted); font-weight: 700; align-self: center; }
+  .filter-info b { color: var(--gold-dark); }
+
+  /* النموذج */
+  form.entry { display: grid; gap: 12px; padding: 18px 20px; align-items: end; }
+  form.entry.cols4 { grid-template-columns: 2fr 1fr 1fr 1fr auto; }
+  form.entry.cols2 { grid-template-columns: 3fr 1fr 1fr auto; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; color: var(--muted); font-weight: 700; }
+  input {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 13px; color: var(--text);
+    font-family: inherit; font-size: 15px; width: 100%; transition: .15s;
+  }
+  input:hover, select:hover { border-color: var(--gold); }
+  input:focus, select:focus { outline: none; border-color: var(--gold); background: #fff; box-shadow: 0 0 0 3px var(--gold-soft); }
+  input::placeholder { color: #aab0bb; }
+  select {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 13px; color: var(--text);
+    font-family: inherit; font-size: 15px; width: 100%; transition: .15s; cursor: pointer;
+  }
+  .item-row { display: flex; gap: 8px; }
+  .item-row select { flex: 1; }
+  .btn-new-item {
+    width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+    background: var(--gold-soft); border: 1px solid var(--gold); color: var(--gold-dark); font-size: 20px;
+  }
+  .btn-new-item:hover { background: var(--gold); color: #fff; }
+
+  button { font-family: inherit; cursor: pointer; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; transition: .15s; }
+  .btn-add { background: var(--gold); color: #fff; padding: 11px 22px; height: 44px; white-space: nowrap; }
+  .btn-add:hover { background: var(--gold-dark); box-shadow: 0 4px 14px rgba(201,162,75,.4); }
+  .btn-add:disabled { opacity:.5; cursor: not-allowed; }
+
+  /* الجدول */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead th {
+    text-align: right; padding: 13px 16px; color: var(--muted);
+    font-weight: 700; border-bottom: 1px solid var(--border);
+    background: var(--surface-2); white-space: nowrap;
+  }
+  tbody td { padding: 13px 16px; border-bottom: 1px solid var(--border); }
+  tbody tr { transition: .12s; }
+  tbody tr:hover { background: var(--gold-soft); }
+  tbody tr:last-child td { border-bottom: none; }
+  .total-cell { font-weight: 800; color: var(--gold-dark); }
+  .actions { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center;
+    background: var(--surface-2); border: 1px solid var(--border); font-size: 15px; transition: .15s;
+  }
+  .icon-btn.edit:hover { border-color: var(--gold); background: var(--gold-soft); }
+  .icon-btn.del:hover { border-color: var(--red); background: #fdeaea; color: var(--red); }
+  .empty { padding: 40px; text-align: center; color: var(--muted); }
+  tfoot td { padding: 14px 16px; font-weight: 900; background: var(--surface-2); border-top: 2px solid var(--border); }
+
+  /* مودال */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(20,30,50,.45);
+    display: none; align-items: center; justify-content: center; z-index: 200;
+    backdrop-filter: blur(3px); padding: 20px;
+  }
+  .modal-overlay.show { display: flex; animation: fade .2s ease; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: var(--surface); border-radius: 18px; width: 100%; max-width: 420px;
+    box-shadow: var(--shadow-lg); overflow: hidden; animation: pop .22s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes pop { from { transform: scale(.92) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+  .modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px; border-bottom: 1px solid var(--border);
+  }
+  .modal-head h3 { font-size: 17px; font-weight: 800; color: var(--gold-dark); }
+  .modal-close {
+    width: 34px; height: 34px; border-radius: 9px; background: var(--surface-2);
+    border: 1px solid var(--border); color: var(--muted); font-size: 15px;
+  }
+  .modal-close:hover { background: #fdeaea; border-color: var(--red); color: var(--red); }
+  .modal-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; }
+  .add-item-row { display: flex; gap: 10px; }
+  .add-item-row input { flex: 1; }
+  .add-item-row .btn-add { white-space: nowrap; }
+  .items-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+  .item-line {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface-2); transition: .15s;
+  }
+  .item-line:hover { border-color: var(--gold); background: var(--gold-soft); }
+  .item-line .name { flex: 1; font-weight: 700; font-size: 15px; }
+  .item-line input.edit-field {
+    flex: 1; padding: 8px 10px; font-size: 15px; border-radius: 8px;
+  }
+  .item-line .mini {
+    width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center;
+    background: var(--surface); border: 1px solid var(--border); font-size: 14px; flex-shrink: 0;
+  }
+  .item-line .mini.edit:hover { border-color: var(--gold); background: var(--gold); color: #fff; }
+  .item-line .mini.del:hover { border-color: var(--red); background: var(--red); color: #fff; }
+  .item-line .mini.save:hover { border-color: var(--green); background: var(--green); color: #fff; }
+  .items-empty { text-align: center; color: var(--muted); padding: 20px; font-size: 14px; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; right: auto; transform: translateX(-50%);
+    max-width: 90vw;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 13px 24px; border-radius: 12px; box-shadow: var(--shadow-lg);
+    opacity: 0; pointer-events: none; transition: .3s; z-index: 100; font-weight: 700;
+  }
+  .toast.show { opacity: 1; }
+  .toast.ok { border-color: var(--green); }
+  .toast.err { border-color: var(--red); }
+
+  /* نموذج عرض السعر */
+  .quote-form { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+  .q-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .q-box { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; background: var(--surface-2); }
+  .q-box legend { font-weight: 800; color: var(--gold-dark); padding: 0 8px; font-size: 14px; }
+  .q-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+  .q-field label { font-size: 12px; color: var(--muted); font-weight: 700; }
+  .q-field.q-inline { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
+  .q-field.q-inline input { width: 130px; }
+  .quote-form textarea {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 11px 13px; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; resize: vertical;
+  }
+  .quote-form textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+  .q-items-head { display: flex; justify-content: space-between; align-items: center; }
+  .q-items-head h3 { font-size: 15px; font-weight: 800; }
+  .q-items-table input { padding: 8px 10px; font-size: 14px; }
+  .q-items-table td { padding: 8px; vertical-align: middle; }
+  .q-items-table .row-total { font-weight: 800; color: var(--gold-dark); white-space: nowrap; }
+  .q-total-line { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; border-bottom: 1px dashed var(--border); font-size: 14px; }
+  .q-total-line b { color: var(--gold-dark); }
+  .q-total-line.grand { border-bottom: none; border-top: 2px solid var(--gold); margin-top: 6px; padding-top: 12px; font-size: 16px; font-weight: 800; }
+  .q-total-line.grand b { color: var(--green); }
+
+  .menu-btn { display: none; width: 44px; height: 44px; border-radius: 10px; place-items: center; background: var(--surface); border: 1px solid var(--border); font-size: 20px; flex-shrink: 0; }
+  .backdrop { display: none; position: fixed; inset: 0; background: rgba(20,30,50,.45); z-index: 55; }
+  .backdrop.show { display: block; }
+
+  @media (max-width: 900px) {
+    html, body { overflow-x: hidden; }
+    aside {
+      position: fixed; top: 0; bottom: 0; right: 0; left: auto; height: 100%;
+      width: 270px; max-width: 82vw; z-index: 60;
+      display: none; /* مخفية تماماً عند الإغلاق — لا تسبب أي تمدد للصفحة */
+    }
+    aside.open { display: flex; animation: slidein .25s ease; }
+    @keyframes slidein { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    .menu-btn { display: grid; }
+    main { padding: 18px 16px; }
+    .page-head h1 { font-size: 19px; }
+    .stats { grid-template-columns: repeat(2,1fr); gap: 12px; }
+    .stat .value { font-size: 19px; }
+    form.entry.cols4, form.entry.cols2 { grid-template-columns: 1fr 1fr; }
+    form.entry .btn-add { grid-column: 1 / -1; }
+    .filter-bar { gap: 8px; padding: 12px 14px; }
+    .filter-bar .fg { flex: 1 1 calc(50% - 4px); }
+    .filter-bar .search { min-width: 0; }
+    .filter-bar input, .filter-bar select { width: 100%; }
+    .filter-info { flex-basis: 100%; margin: 4px 0 0; }
+    .modal { max-width: 100%; }
+  }
+
+  @media (max-width: 520px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    form.entry.cols4, form.entry.cols2 { grid-template-columns: 1fr; }
+    .filter-bar .fg { flex-basis: 100%; }
+    .card-head { padding: 14px 16px; }
+    thead th, tbody td, tfoot td { padding: 10px 12px; font-size: 13px; }
+    .page-head h1 { font-size: 17px; }
+    .brand span { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<div class="backdrop" id="backdrop" onclick="window.toggleMenu(false)"></div>
+<div class="layout">
+  <!-- القائمة الجانبية (يمين) -->
+  <aside id="aside">
+    <div class="brand">
+      <img src="logo_gold.png" alt="logo" onerror="this.style.display='none'" />
+      <span>المشتريات<br>والمبيعات</span>
+    </div>
+    <nav class="nav">
+      <button class="nav-link active" data-tab="dashboard"><span class="ico">📊</span> لوحة التحكم</button>
+      <button class="nav-link" data-tab="purchases"><span class="ico">🛒</span> المشتريات</button>
+      <button class="nav-link" data-tab="sales"><span class="ico">💰</span> المبيعات</button>
+      <button class="nav-link" data-tab="expenses"><span class="ico">🧾</span> المصاريف التشغيلية</button>
+      <button class="nav-link" data-tab="quote"><span class="ico">📄</span> عرض سعر (PDF)</button>
+    </nav>
+    <div class="nav-foot">مربوط بـ Supabase ☁️</div>
+  </aside>
+
+  <!-- المحتوى (شمال) -->
+  <main>
+    <div class="page-head">
+      <div>
+        <h1 id="pageTitle">لوحة التحكم</h1>
+        <div class="sub" id="pageSub">نظرة عامة على الحركة المالية</div>
+      </div>
+      <button class="menu-btn" onclick="window.toggleMenu()">☰</button>
+    </div>
+
+    <!-- بطاقات الملخص (تظهر دائماً) -->
+    <div class="stats">
+      <div class="stat buy"><div class="label">إجمالي المشتريات</div><div class="value" id="sumBuy">0 <span class="unit">ر.س</span></div></div>
+      <div class="stat sell"><div class="label">إجمالي المبيعات</div><div class="value" id="sumSell">0 <span class="unit">ر.س</span></div></div>
+      <div class="stat exp"><div class="label">المصاريف التشغيلية</div><div class="value" id="sumExp">0 <span class="unit">ر.س</span></div></div>
+      <div class="stat profit"><div class="label">صافي الربح</div><div class="value" id="sumProfit">0 <span class="unit">ر.س</span></div></div>
+    </div>
+
+    <!-- لوحة التحكم: نظرة عامة -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="card">
+        <div class="card-head"><h2>سجل العمليات</h2></div>
+        <div class="filter-bar" id="filter-dashboard">
+          <div class="fg"><label>النوع</label>
+            <select id="f-type">
+              <option value="">الكل</option>
+              <option value="purchases">🛒 مشتريات</option>
+              <option value="sales">💰 مبيعات</option>
+              <option value="expenses">🧾 مصاريف</option>
+            </select>
+          </div>
+          <div class="fg"><label>بحث</label><input class="search" id="f-search" placeholder="صنف / بيان / نوع سيارة..." /></div>
+          <div class="fg"><label>من تاريخ</label><input type="date" id="f-from" /></div>
+          <div class="fg"><label>إلى تاريخ</label><input type="date" id="f-to" /></div>
+          <button class="btn-clear" type="button" onclick="window.clearDashFilter()">✕ مسح</button>
+          <div class="filter-info" id="dash-info"></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>النوع</th><th>البيان / الصنف</th><th>نوع السيارة</th><th>الكمية</th><th>المبلغ</th><th>التاريخ</th></tr></thead>
+            <tbody id="tbody-dashboard"></tbody>
+            <tfoot><tr><td colspan="4">إجمالي المعروض</td><td class="total-cell" id="dash-total">0</td><td></td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- المشتريات -->
+    <div class="panel" id="panel-purchases">
+      <div class="card">
+        <div class="card-head"><h2>إضافة عملية شراء</h2></div>
+        <form class="entry cols4" data-form="purchases">
+          <input type="hidden" name="id" />
+          <div class="field"><label>الصنف</label>
+            <div class="item-row">
+              <select name="item" data-items required></select>
+              <button type="button" class="btn-new-item" title="إضافة صنف جديد" onclick="window.addItem()">➕</button>
+            </div>
+          </div>
+          <div class="field car-field" style="display:none"><label>🚛 نوع السيارة</label>
+            <select name="car_type">
+              <option value="">— اختر —</option>
+              <option value="ديانة">ديانة</option>
+              <option value="سكس">سكس</option>
+              <option value="تريلا">تريلا</option>
+            </select>
+          </div>
+          <div class="field"><label>الكمية</label><input name="quantity" type="number" step="any" min="0" placeholder="0" required /></div>
+          <div class="field"><label>سعر الحبة</label><input name="unit_price" type="number" step="any" min="0" placeholder="0.00" required /></div>
+          <div class="field"><label>التاريخ</label><input name="purchase_date" type="date" required /></div>
+          <button type="submit" class="btn-add">➕ إضافة</button>
+        </form>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>الصنف</th><th>نوع السيارة</th><th>الكمية</th><th>سعر الحبة</th><th>الإجمالي</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+            <tbody id="tbody-purchases"></tbody>
+            <tfoot><tr><td colspan="4">الإجمالي الكلي</td><td class="total-cell" id="foot-purchases">0</td><td colspan="2"></td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- المبيعات -->
+    <div class="panel" id="panel-sales">
+      <div class="card">
+        <div class="card-head"><h2>إضافة عملية بيع</h2></div>
+        <form class="entry cols4" data-form="sales">
+          <input type="hidden" name="id" />
+          <div class="field"><label>الصنف</label>
+            <div class="item-row">
+              <select name="item" data-items required></select>
+              <button type="button" class="btn-new-item" title="إضافة صنف جديد" onclick="window.addItem()">➕</button>
+            </div>
+          </div>
+          <div class="field car-field" style="display:none"><label>🚛 نوع السيارة</label>
+            <select name="car_type">
+              <option value="">— اختر —</option>
+              <option value="ديانة">ديانة</option>
+              <option value="سكس">سكس</option>
+              <option value="تريلا">تريلا</option>
+            </select>
+          </div>
+          <div class="field"><label>الكمية</label><input name="quantity" type="number" step="any" min="0" placeholder="0" required /></div>
+          <div class="field"><label>سعر الحبة</label><input name="unit_price" type="number" step="any" min="0" placeholder="0.00" required /></div>
+          <div class="field"><label>التاريخ</label><input name="sale_date" type="date" required /></div>
+          <button type="submit" class="btn-add">➕ إضافة</button>
+        </form>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>الصنف</th><th>نوع السيارة</th><th>الكمية</th><th>سعر الحبة</th><th>الإجمالي</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+            <tbody id="tbody-sales"></tbody>
+            <tfoot><tr><td colspan="4">الإجمالي الكلي</td><td class="total-cell" id="foot-sales">0</td><td colspan="2"></td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- المصاريف -->
+    <div class="panel" id="panel-expenses">
+      <div class="card">
+        <div class="card-head"><h2>إضافة مصروف تشغيلي</h2></div>
+        <form class="entry cols4" data-form="expenses">
+          <input type="hidden" name="id" />
+          <div class="field"><label>البيان</label><input name="description" placeholder="بيان المصروف" required /></div>
+          <div class="field"><label>الكمية</label><input name="quantity" type="number" step="any" min="0" placeholder="0" required /></div>
+          <div class="field"><label>سعر الحبة</label><input name="unit_price" type="number" step="any" min="0" placeholder="0.00" required /></div>
+          <div class="field"><label>التاريخ</label><input name="expense_date" type="date" required /></div>
+          <button type="submit" class="btn-add">➕ إضافة</button>
+        </form>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>البيان</th><th>الكمية</th><th>سعر الحبة</th><th>الإجمالي</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+            <tbody id="tbody-expenses"></tbody>
+            <tfoot><tr><td colspan="3">الإجمالي الكلي</td><td class="total-cell" id="foot-expenses">0</td><td colspan="2"></td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- عرض سعر -->
+    <div class="panel" id="panel-quote">
+      <div class="card">
+        <div class="card-head">
+          <h2>إنشاء عرض سعر</h2>
+          <button type="button" class="btn-add" onclick="window.generateQuote()">🖨️ معاينة وطباعة PDF</button>
+        </div>
+        <div class="quote-form">
+          <!-- بيانات العميل + تفاصيل العرض -->
+          <div class="q-grid2">
+            <fieldset class="q-box">
+              <legend>بيانات العميل</legend>
+              <div class="q-field"><label>الاسم</label><input id="q_name" placeholder="اسم العميل" /></div>
+              <div class="q-field"><label>الشركة</label><input id="q_company" placeholder="اسم الشركة" /></div>
+              <div class="q-field"><label>الجوال</label><input id="q_mobile" placeholder="05xxxxxxxx" /></div>
+              <div class="q-field"><label>البريد الإلكتروني</label><input id="q_email" placeholder="email@example.com" /></div>
+              <div class="q-field"><label>العنوان</label><input id="q_address" placeholder="العنوان" /></div>
+            </fieldset>
+            <fieldset class="q-box">
+              <legend>تفاصيل عرض السعر</legend>
+              <div class="q-field"><label>رقم العرض</label><input id="q_number" value="Q-2026-001" /></div>
+              <div class="q-field"><label>التاريخ</label><input id="q_date" type="date" /></div>
+              <div class="q-field"><label>صالح حتى</label><input id="q_valid" type="date" /></div>
+              <div class="q-field"><label>طريقة الدفع</label><input id="q_payment" value="تحويل بنكي" /></div>
+              <div class="q-field"><label>أعد بواسطة</label><input id="q_by" placeholder="اسم المعد" /></div>
+            </fieldset>
+          </div>
+
+          <!-- بنود العرض -->
+          <div class="q-items-head">
+            <h3>بنود العرض</h3>
+            <button type="button" class="btn-clear" onclick="window.addQuoteRow()">➕ إضافة بند</button>
+          </div>
+          <div class="table-wrap">
+            <table class="q-items-table">
+              <thead><tr><th style="width:40px">م</th><th>البيان</th><th style="width:90px">الوحدة</th><th style="width:90px">الكمية</th><th style="width:130px">سعر الوحدة</th><th style="width:130px">الإجمالي</th><th style="width:50px"></th></tr></thead>
+              <tbody id="q_items"></tbody>
+            </table>
+          </div>
+
+          <!-- الشروط + الإجماليات -->
+          <div class="q-grid2">
+            <fieldset class="q-box">
+              <legend>الشروط والأحكام</legend>
+              <textarea id="q_terms" rows="5">•  هذا العرض ساري لمدة (30) يوماً من تاريخ إصداره.
+•  جميع الأسعار بالريال السعودي وتشمل ضريبة القيمة المضافة (15%).
+•  يُسدَّد المبلغ وفق الشروط المتفق عليها قبل البدء بالتنفيذ.
+•  الأسعار قابلة للمراجعة بعد انتهاء صلاحية هذا العرض.</textarea>
+            </fieldset>
+            <fieldset class="q-box">
+              <legend>الإجماليات</legend>
+              <div class="q-total-line"><span>الإجمالي الفرعي</span><b id="q_subtotal">0.00 ر.س</b></div>
+              <div class="q-field q-inline"><label>الخصم (ر.س)</label><input id="q_discount" type="number" step="any" min="0" value="0" /></div>
+              <div class="q-field q-inline"><label>نسبة الضريبة %</label><input id="q_vat" type="number" step="any" min="0" value="15" /></div>
+              <div class="q-total-line"><span>ضريبة القيمة المضافة</span><b id="q_vatval">0.00 ر.س</b></div>
+              <div class="q-total-line grand"><span>الإجمالي شامل الضريبة</span><b id="q_grand">0.00 ر.س</b></div>
+            </fieldset>
+          </div>
+          <div class="q-field"><label>سطر الشكر / التذييل</label><input id="q_footer" value="شكراً لتعاملكم معنا" /></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- مودال إدارة الأصناف -->
+<div class="modal-overlay" id="itemModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>📦 إدارة الأصناف</h3>
+      <button class="modal-close" type="button" onclick="window.closeItemModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="itemForm" class="add-item-row">
+        <input id="itemNameInput" placeholder="اكتب اسم الصنف الجديد..." autocomplete="off" required />
+        <button type="submit" class="btn-add" id="itemSaveBtn">➕ إضافة</button>
+      </form>
+      <div class="items-list" id="itemsList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL = 'https://vilubsgomjkopkdmituy.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_jhWunpDaNpkudGTaGDkp5Q_VmjuSEb2';
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const fmt = n => Number(n || 0).toLocaleString('ar-EG', { maximumFractionDigits: 2 });
+const today = () => new Date().toISOString().slice(0, 10);
+
+const CONFIG = {
+  purchases: { table: 'purchases', dateCol: 'purchase_date', kind: 'item', title: 'المشتريات', sub: 'إدارة عمليات الشراء' },
+  sales:     { table: 'sales',     dateCol: 'sale_date',     kind: 'item', title: 'المبيعات', sub: 'إدارة عمليات البيع' },
+  expenses:  { table: 'expenses',  dateCol: 'expense_date',  kind: 'expense', title: 'المصاريف التشغيلية', sub: 'إدارة المصروفات' },
+};
+
+const state = { purchases: [], sales: [], expenses: [], items: [] };
+
+function toast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+// القائمة الجانبية (الجوال)
+window.toggleMenu = (force) => {
+  const aside = document.getElementById('aside');
+  const bd = document.getElementById('backdrop');
+  const open = force === undefined ? !aside.classList.contains('open') : force;
+  aside.classList.toggle('open', open);
+  bd.classList.toggle('show', open);
+};
+
+// التنقل
+const TITLES = { dashboard: ['لوحة التحكم', 'نظرة عامة على الحركة المالية'] };
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', () => {
+    const tab = link.dataset.tab;
+    document.querySelectorAll('.nav-link').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    link.classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+    const meta = { dashboard: TITLES.dashboard, quote: ['عرض سعر', 'إنشاء وتصدير عرض سعر PDF'] }[tab] || [CONFIG[tab].title, CONFIG[tab].sub];
+    document.getElementById('pageTitle').textContent = meta[0];
+    document.getElementById('pageSub').textContent = meta[1];
+    window.toggleMenu(false);
+    if (tab === 'dashboard') renderDashboard();
+  });
+});
+
+document.querySelectorAll('form .entry input[type=date], input[name$="_date"]').forEach(i => i.value = today());
+
+// ربط فلاتر لوحة التحكم
+['f-type','f-search','f-from','f-to'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', renderDashboard);
+  el.addEventListener('change', renderDashboard);
+});
+
+// ===== منطق نوع السيارة =====
+// تطبيع النص: إزالة الهمزات وتوحيد أشكال الألف حتى تعمل المطابقة مع كل التهجئات
+const normalize = s => String(s || '')
+  .replace(/[ءأإآؤئ]/g, 'ا')   // توحيد الهمزات والألف
+  .replace(/[ً-ْ]/g, '') // إزالة التشكيل
+  .replace(/\s+/g, '');
+const CAR_KEYWORDS = ['بطح', 'دفان', 'صبيز']; // جذور تغطي: بطحا/بطحاء، دفان، صبيز
+const needsCar = name => { const n = normalize(name); return CAR_KEYWORDS.some(k => n.includes(normalize(k))); };
+
+function toggleCarField(form) {
+  const sel = form.querySelector('select[data-items]');
+  const carField = form.querySelector('.car-field');
+  const carSelect = form.querySelector('select[name=car_type]');
+  if (!carField) return;
+  if (needsCar(sel.value)) {
+    carField.style.display = '';
+    carSelect.setAttribute('required', 'required');
+  } else {
+    carField.style.display = 'none';
+    carSelect.removeAttribute('required');
+    carSelect.value = '';
+  }
+}
+
+document.querySelectorAll('form[data-form="purchases"], form[data-form="sales"]').forEach(form => {
+  const sel = form.querySelector('select[data-items]');
+  sel.addEventListener('change', () => toggleCarField(form));
+});
+
+// ===== الأصناف الثابتة =====
+async function loadItems() {
+  const { data, error } = await sb.from('items').select('*').order('name', { ascending: true });
+  if (error) { toast('خطأ في تحميل الأصناف: ' + error.message, 'err'); return; }
+  state.items = data || [];
+  fillItemSelects();
+  renderItemsList();
+  refreshItemsDatalist();
+}
+
+function renderItemsList() {
+  const box = document.getElementById('itemsList');
+  if (!box) return;
+  if (!state.items.length) { box.innerHTML = `<div class="items-empty">لا توجد أصناف بعد — أضف أول صنف 👆</div>`; return; }
+  box.innerHTML = state.items.map(it => `
+    <div class="item-line" data-id="${it.id}">
+      <span class="name">${esc(it.name)}</span>
+      <button type="button" class="mini edit" title="تعديل" onclick="window.editItem(${it.id})">✏️</button>
+      <button type="button" class="mini del" title="حذف" onclick="window.deleteItem(${it.id})">🗑️</button>
+    </div>`).join('');
+}
+
+window.editItem = (id) => {
+  const it = state.items.find(x => x.id === id);
+  if (!it) return;
+  const line = document.querySelector(`.item-line[data-id="${id}"]`);
+  line.innerHTML = `
+    <input class="edit-field" id="edit-${id}" value="${esc(it.name)}" />
+    <button type="button" class="mini save" title="حفظ" onclick="window.saveItem(${id})">💾</button>
+    <button type="button" class="mini del" title="إلغاء" onclick="window.renderItemsListGlobal()">✕</button>`;
+  const f = document.getElementById('edit-' + id);
+  f.focus(); f.select();
+  f.addEventListener('keydown', e => { if (e.key === 'Enter') window.saveItem(id); });
+};
+window.renderItemsListGlobal = () => renderItemsList();
+
+window.saveItem = async (id) => {
+  const it = state.items.find(x => x.id === id);
+  const newName = document.getElementById('edit-' + id).value.trim();
+  if (!newName) { toast('الاسم لا يمكن أن يكون فارغاً', 'err'); return; }
+  if (newName === it.name) { renderItemsList(); return; }
+  if (state.items.some(x => x.name === newName)) { toast('يوجد صنف بنفس الاسم', 'err'); return; }
+  const oldName = it.name;
+  const { error } = await sb.from('items').update({ name: newName }).eq('id', id);
+  if (error) { toast('خطأ: ' + error.message, 'err'); return; }
+  // تحديث اسم الصنف في المشتريات والمبيعات المرتبطة به
+  await sb.from('purchases').update({ item: newName }).eq('item', oldName);
+  await sb.from('sales').update({ item: newName }).eq('item', oldName);
+  toast('تم تعديل الصنف ✅', 'ok');
+  await loadItems();
+  load('purchases'); load('sales');
+};
+
+window.deleteItem = async (id) => {
+  const it = state.items.find(x => x.id === id);
+  if (!it) return;
+  if (!confirm(`حذف الصنف "${it.name}"؟\n(لن يؤثر على العمليات المسجّلة سابقاً)`)) return;
+  const { error } = await sb.from('items').delete().eq('id', id);
+  if (error) { toast('خطأ في الحذف: ' + error.message, 'err'); return; }
+  toast('تم حذف الصنف 🗑️', 'ok');
+  loadItems();
+};
+
+function fillItemSelects() {
+  document.querySelectorAll('select[data-items]').forEach(sel => {
+    const current = sel.value;
+    const opts = state.items.map(it => `<option value="${esc(it.name)}">${esc(it.name)}</option>`).join('');
+    sel.innerHTML = state.items.length
+      ? opts
+      : `<option value="" disabled selected>لا توجد أصناف — أضف صنفاً ➕</option>`;
+    if (current && state.items.some(it => it.name === current)) sel.value = current;
+  });
+  document.querySelectorAll('form[data-form="purchases"], form[data-form="sales"]').forEach(toggleCarField);
+}
+
+// مودال إضافة صنف
+const itemModal = document.getElementById('itemModal');
+const itemNameInput = document.getElementById('itemNameInput');
+
+window.addItem = () => {
+  itemModal.classList.add('show');
+  itemNameInput.value = '';
+  setTimeout(() => itemNameInput.focus(), 50);
+};
+window.closeItemModal = () => itemModal.classList.remove('show');
+
+// إغلاق بالضغط على الخلفية أو زر Esc
+itemModal.addEventListener('click', e => { if (e.target === itemModal) window.closeItemModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') window.closeItemModal(); });
+
+document.getElementById('itemForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = itemNameInput.value.trim();
+  if (!name) return;
+  if (state.items.some(it => it.name === name)) { toast('الصنف موجود مسبقاً', 'err'); return; }
+  const btn = document.getElementById('itemSaveBtn');
+  btn.disabled = true;
+  const { error } = await sb.from('items').insert({ name });
+  btn.disabled = false;
+  if (error) { toast('خطأ: ' + error.message, 'err'); return; }
+  toast('تمت إضافة الصنف ✅', 'ok');
+  itemNameInput.value = '';
+  itemNameInput.focus();
+  await loadItems();
+  document.querySelectorAll('select[data-items]').forEach(sel => { sel.value = name; });
+});
+
+async function load(key) {
+  const cfg = CONFIG[key];
+  const { data, error } = await sb.from(cfg.table).select('*').order('id', { ascending: false });
+  if (error) { toast('خطأ في التحميل: ' + error.message, 'err'); return; }
+  state[key] = data || [];
+  render(key);
+  renderStats();
+  renderDashboard();
+}
+
+function render(key) {
+  const cfg = CONFIG[key];
+  const tbody = document.getElementById('tbody-' + key);
+  const rows = state[key];
+  if (!rows.length) {
+    const cols = cfg.kind === 'expense' ? 6 : 7;
+    tbody.innerHTML = `<tr><td class="empty" colspan="${cols}">لا توجد بيانات بعد — أضف أول إدخال 👆</td></tr>`;
+  } else if (cfg.kind === 'expense') {
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>${esc(r.description)}</td>
+        <td>${fmt(r.quantity)}</td>
+        <td>${fmt(r.unit_price)} ر.س</td>
+        <td class="total-cell">${fmt(r.total)} ر.س</td>
+        <td>${r.expense_date || ''}</td>
+        <td><div class="actions">
+          <button class="icon-btn edit" title="تعديل" onclick="window.editRow('expenses',${r.id})">✏️</button>
+          <button class="icon-btn del" title="حذف" onclick="window.delRow('expenses',${r.id})">🗑️</button>
+        </div></td>
+      </tr>`).join('');
+  } else {
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td>${esc(r.item)}</td>
+        <td>${r.car_type ? '🚛 ' + esc(r.car_type) : '—'}</td>
+        <td>${fmt(r.quantity)}</td>
+        <td>${fmt(r.unit_price)} ر.س</td>
+        <td class="total-cell">${fmt(r.total)} ر.س</td>
+        <td>${r[cfg.dateCol] || ''}</td>
+        <td><div class="actions">
+          <button class="icon-btn edit" title="تعديل" onclick="window.editRow('${key}',${r.id})">✏️</button>
+          <button class="icon-btn del" title="حذف" onclick="window.delRow('${key}',${r.id})">🗑️</button>
+        </div></td>
+      </tr>`).join('');
+  }
+  const foot = rows.reduce((s, r) => s + Number(r.total || 0), 0);
+  document.getElementById('foot-' + key).textContent = fmt(foot) + ' ر.س';
+}
+
+function renderDashboard() {
+  let items = [];
+  state.purchases.forEach(r => items.push({ src:'purchases', type:'🛒 شراء', name:r.item, car:r.car_type, qty:fmt(r.quantity), amount:r.total, date:r.purchase_date, created:r.created_at }));
+  state.sales.forEach(r => items.push({ src:'sales', type:'💰 بيع', name:r.item, car:r.car_type, qty:fmt(r.quantity), amount:r.total, date:r.sale_date, created:r.created_at }));
+  state.expenses.forEach(r => items.push({ src:'expenses', type:'🧾 مصروف', name:r.description, car:null, qty:fmt(r.quantity), amount:r.total, date:r.expense_date, created:r.created_at }));
+
+  // تطبيق الفلاتر
+  const fType = document.getElementById('f-type').value;
+  const fSearch = normalize(document.getElementById('f-search').value);
+  const fFrom = document.getElementById('f-from').value;
+  const fTo = document.getElementById('f-to').value;
+
+  if (fType) items = items.filter(r => r.src === fType);
+  if (fSearch) items = items.filter(r => normalize(r.name).includes(fSearch) || normalize(r.car).includes(fSearch));
+  if (fFrom) items = items.filter(r => r.date && r.date >= fFrom);
+  if (fTo) items = items.filter(r => r.date && r.date <= fTo);
+
+  items.sort((a,b) => new Date(b.created) - new Date(a.created));
+
+  const tbody = document.getElementById('tbody-dashboard');
+  const total = items.reduce((s, r) => s + Number(r.amount || 0), 0);
+  document.getElementById('dash-total').textContent = fmt(total) + ' ر.س';
+  document.getElementById('dash-info').innerHTML = `عدد العمليات: <b>${items.length}</b>`;
+
+  if (!items.length) { tbody.innerHTML = `<tr><td class="empty" colspan="6">لا توجد عمليات مطابقة 🔍</td></tr>`; return; }
+  tbody.innerHTML = items.map(r => `
+    <tr><td>${r.type}</td><td>${esc(r.name)}</td><td>${r.car ? '🚛 ' + esc(r.car) : '—'}</td><td>${r.qty}</td><td class="total-cell">${fmt(r.amount)} ر.س</td><td>${r.date || ''}</td></tr>`).join('');
+}
+
+window.clearDashFilter = () => {
+  document.getElementById('f-type').value = '';
+  document.getElementById('f-search').value = '';
+  document.getElementById('f-from').value = '';
+  document.getElementById('f-to').value = '';
+  renderDashboard();
+};
+
+function renderStats() {
+  const buy = state.purchases.reduce((s, r) => s + Number(r.total || 0), 0);
+  const sell = state.sales.reduce((s, r) => s + Number(r.total || 0), 0);
+  const exp = state.expenses.reduce((s, r) => s + Number(r.total || 0), 0);
+  const profit = sell - buy - exp;
+  document.getElementById('sumBuy').innerHTML = fmt(buy) + ' <span class="unit">ر.س</span>';
+  document.getElementById('sumSell').innerHTML = fmt(sell) + ' <span class="unit">ر.س</span>';
+  document.getElementById('sumExp').innerHTML = fmt(exp) + ' <span class="unit">ر.س</span>';
+  document.getElementById('sumProfit').innerHTML = fmt(profit) + ' <span class="unit">ر.س</span>';
+  document.getElementById('sumProfit').style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+document.querySelectorAll('form.entry').forEach(form => {
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const key = form.dataset.form;
+    const cfg = CONFIG[key];
+    const btn = form.querySelector('button[type=submit]');
+    const fd = new FormData(form);
+    const id = fd.get('id');
+
+    let payload;
+    if (cfg.kind === 'expense') {
+      payload = { description: fd.get('description'), quantity: Number(fd.get('quantity')), unit_price: Number(fd.get('unit_price')), expense_date: fd.get('expense_date') };
+    } else {
+      payload = { item: fd.get('item'), quantity: Number(fd.get('quantity')), unit_price: Number(fd.get('unit_price')), [cfg.dateCol]: fd.get(cfg.dateCol) };
+      payload.car_type = needsCar(fd.get('item')) ? (fd.get('car_type') || null) : null;
+    }
+
+    btn.disabled = true;
+    let error;
+    if (id) { ({ error } = await sb.from(cfg.table).update(payload).eq('id', id)); }
+    else { ({ error } = await sb.from(cfg.table).insert(payload)); }
+    btn.disabled = false;
+
+    if (error) { toast('خطأ: ' + error.message, 'err'); return; }
+    toast(id ? 'تم التعديل بنجاح ✅' : 'تمت الإضافة بنجاح ✅', 'ok');
+    form.reset();
+    form.querySelector('[name=id]').value = '';
+    form.querySelectorAll('input[type=date]').forEach(i => i.value = today());
+    if (cfg.kind !== 'expense') toggleCarField(form);
+    btn.textContent = '➕ إضافة';
+    load(key);
+  });
+});
+
+window.editRow = (key, id) => {
+  const cfg = CONFIG[key];
+  const row = state[key].find(r => r.id === id);
+  if (!row) return;
+  const form = document.querySelector(`form[data-form="${key}"]`);
+  form.querySelector('[name=id]').value = id;
+  if (cfg.kind === 'expense') {
+    form.querySelector('[name=description]').value = row.description;
+    form.querySelector('[name=quantity]').value = row.quantity;
+    form.querySelector('[name=unit_price]').value = row.unit_price;
+    form.querySelector('[name=expense_date]').value = row.expense_date;
+  } else {
+    form.querySelector('[name=item]').value = row.item;
+    form.querySelector('[name=quantity]').value = row.quantity;
+    form.querySelector('[name=unit_price]').value = row.unit_price;
+    form.querySelector(`[name=${cfg.dateCol}]`).value = row[cfg.dateCol];
+    toggleCarField(form);
+    if (needsCar(row.item)) form.querySelector('[name=car_type]').value = row.car_type || '';
+  }
+  form.querySelector('button[type=submit]').textContent = '💾 حفظ التعديل';
+  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+window.delRow = async (key, id) => {
+  if (!confirm('هل تريد حذف هذا السجل؟')) return;
+  const { error } = await sb.from(CONFIG[key].table).delete().eq('id', id);
+  if (error) { toast('خطأ في الحذف: ' + error.message, 'err'); return; }
+  toast('تم الحذف 🗑️', 'ok');
+  load(key);
+};
+
+// ===== عرض السعر =====
+const qItems = document.getElementById('q_items');
+
+window.addQuoteRow = (data = {}) => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="q-num"></td>
+    <td><input class="qi-desc" placeholder="وصف البند" value="${esc(data.desc || '')}" list="itemsDatalist" /></td>
+    <td><input class="qi-unit" placeholder="حبة" value="${esc(data.unit || 'حبة')}" /></td>
+    <td><input class="qi-qty" type="number" step="any" min="0" value="${data.qty ?? 1}" /></td>
+    <td><input class="qi-price" type="number" step="any" min="0" value="${data.price ?? 0}" /></td>
+    <td class="row-total">0.00</td>
+    <td><button type="button" class="icon-btn del" title="حذف" onclick="this.closest('tr').remove();window.recalcQuote()">🗑️</button></td>`;
+  qItems.appendChild(tr);
+  tr.querySelectorAll('.qi-qty, .qi-price').forEach(i => i.addEventListener('input', recalcQuote));
+  renumberQuote();
+  recalcQuote();
+};
+
+function renumberQuote() {
+  [...qItems.children].forEach((tr, i) => tr.querySelector('.q-num').textContent = i + 1);
+}
+
+window.recalcQuote = recalcQuote;
+function recalcQuote() {
+  let sub = 0;
+  [...qItems.children].forEach(tr => {
+    const qty = Number(tr.querySelector('.qi-qty').value) || 0;
+    const price = Number(tr.querySelector('.qi-price').value) || 0;
+    const t = qty * price;
+    tr.querySelector('.row-total').textContent = fmt(t);
+    sub += t;
+  });
+  const discount = Number(document.getElementById('q_discount').value) || 0;
+  const vatRate = Number(document.getElementById('q_vat').value) || 0;
+  const taxable = Math.max(sub - discount, 0);
+  const vatVal = taxable * vatRate / 100;
+  const grand = taxable + vatVal;
+  document.getElementById('q_subtotal').textContent = fmt(sub) + ' ر.س';
+  document.getElementById('q_vatval').textContent = fmt(vatVal) + ' ر.س';
+  document.getElementById('q_grand').textContent = fmt(grand) + ' ر.س';
+  return { sub, discount, vatRate, vatVal, grand };
+}
+
+['q_discount', 'q_vat'].forEach(id => document.getElementById(id).addEventListener('input', recalcQuote));
+
+// تعبئة أولية لعرض السعر
+function initQuote() {
+  document.getElementById('q_date').value = today();
+  const v = new Date(); v.setDate(v.getDate() + 30);
+  document.getElementById('q_valid').value = v.toISOString().slice(0, 10);
+  // datalist للأصناف
+  if (!document.getElementById('itemsDatalist')) {
+    const dl = document.createElement('datalist'); dl.id = 'itemsDatalist';
+    document.body.appendChild(dl);
+  }
+  addQuoteRow();
+}
+
+function refreshItemsDatalist() {
+  const dl = document.getElementById('itemsDatalist');
+  if (dl) dl.innerHTML = state.items.map(it => `<option value="${esc(it.name)}"></option>`).join('');
+}
+
+function buildQuoteHTML() {
+  const g = recalcQuote();
+  const get = id => esc(document.getElementById(id).value);
+  const rows = [...qItems.children].map((tr, i) => {
+    const desc = tr.querySelector('.qi-desc').value;
+    const unit = tr.querySelector('.qi-unit').value;
+    const qty = Number(tr.querySelector('.qi-qty').value) || 0;
+    const price = Number(tr.querySelector('.qi-price').value) || 0;
+    if (!desc && !qty && !price) return '';
+    return `<tr>
+      <td class="c">${i + 1}</td>
+      <td>${esc(desc)}</td>
+      <td class="c">${esc(unit)}</td>
+      <td class="c">${fmt(qty)}</td>
+      <td class="c">${fmt(price)}</td>
+      <td class="c b">${fmt(qty * price)}</td>
+    </tr>`;
+  }).join('');
+
+  const terms = document.getElementById('q_terms').value.split('\n').filter(Boolean)
+    .map(t => `<div class="term">${esc(t)}</div>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<title>عرض سعر ${get('q_number')}</title>
+<style>
+  @page { size: A4; margin: 14mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Cairo','Segoe UI',Tahoma,sans-serif; color: #1f2530; font-size: 12.5px; }
+  .head { text-align: center; padding: 14px; border: 2px solid #2c3340; border-radius: 8px; margin-bottom: 16px; }
+  .head h1 { font-size: 22px; letter-spacing: 1px; color: #2c3340; }
+  .grid2 { display: flex; gap: 14px; margin-bottom: 14px; }
+  .box { flex: 1; border: 1px solid #c9ced8; border-radius: 8px; overflow: hidden; }
+  .box h2 { background: #2c3340; color: #fff; font-size: 13px; padding: 7px 12px; }
+  .box .line { display: flex; padding: 6px 12px; border-bottom: 1px solid #eef0f4; font-size: 12px; }
+  .box .line:last-child { border-bottom: none; }
+  .box .line .lbl { color: #6b7280; min-width: 100px; font-weight: 700; }
+  .box .line .val { font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  thead th { background: #2c3340; color: #fff; padding: 9px 8px; font-size: 12.5px; border: 1px solid #2c3340; }
+  tbody td { padding: 8px; border: 1px solid #d7dbe2; font-size: 12px; }
+  tbody tr:nth-child(even) td { background: #f7f8fa; }
+  td.c { text-align: center; }
+  td.b { font-weight: 800; }
+  .bottom { display: flex; gap: 14px; }
+  .terms { flex: 1.3; border: 1px solid #c9ced8; border-radius: 8px; padding: 10px 14px; }
+  .terms h3 { font-size: 13px; margin-bottom: 8px; color: #2c3340; }
+  .term { font-size: 11.5px; padding: 3px 0; color: #374151; }
+  .totals { flex: 1; border: 1px solid #c9ced8; border-radius: 8px; overflow: hidden; align-self: flex-start; }
+  .totals .tl { display: flex; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid #eef0f4; font-size: 12.5px; }
+  .totals .tl.grand { background: #2c3340; color: #fff; font-size: 14px; font-weight: 800; border-bottom: none; }
+  .foot { text-align: center; margin-top: 18px; padding-top: 10px; border-top: 1px solid #c9ced8; color: #6b7280; font-size: 12px; }
+</style></head><body>
+  <div class="head"><h1>عرض سعر &nbsp;|&nbsp; QUOTATION</h1></div>
+  <div class="grid2">
+    <div class="box"><h2>بيانات العميل</h2>
+      <div class="line"><span class="lbl">الاسم</span><span class="val">${get('q_name')}</span></div>
+      <div class="line"><span class="lbl">الشركة</span><span class="val">${get('q_company')}</span></div>
+      <div class="line"><span class="lbl">الجوال</span><span class="val">${get('q_mobile')}</span></div>
+      <div class="line"><span class="lbl">البريد الإلكتروني</span><span class="val">${get('q_email')}</span></div>
+      <div class="line"><span class="lbl">العنوان</span><span class="val">${get('q_address')}</span></div>
+    </div>
+    <div class="box"><h2>تفاصيل عرض السعر</h2>
+      <div class="line"><span class="lbl">رقم العرض</span><span class="val">${get('q_number')}</span></div>
+      <div class="line"><span class="lbl">التاريخ</span><span class="val">${get('q_date')}</span></div>
+      <div class="line"><span class="lbl">صالح حتى</span><span class="val">${get('q_valid')}</span></div>
+      <div class="line"><span class="lbl">طريقة الدفع</span><span class="val">${get('q_payment')}</span></div>
+      <div class="line"><span class="lbl">أعد بواسطة</span><span class="val">${get('q_by')}</span></div>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th style="width:36px">م</th><th>البيان</th><th style="width:70px">الوحدة</th><th style="width:70px">الكمية</th><th style="width:100px">سعر الوحدة</th><th style="width:110px">السعر الإجمالي</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="bottom">
+    <div class="terms"><h3>الشروط والأحكام</h3>${terms}</div>
+    <div class="totals">
+      <div class="tl"><span>الإجمالي الفرعي</span><b>${fmt(g.sub)} ر.س</b></div>
+      <div class="tl"><span>الخصم</span><b>${fmt(g.discount)} ر.س</b></div>
+      <div class="tl"><span>ضريبة القيمة المضافة (${fmt(g.vatRate)}%)</span><b>${fmt(g.vatVal)} ر.س</b></div>
+      <div class="tl grand"><span>الإجمالي شامل الضريبة</span><b>${fmt(g.grand)} ر.س</b></div>
+    </div>
+  </div>
+  <div class="foot">${get('q_footer')} &nbsp;•&nbsp; ${get('q_email')}</div>
+  <script>window.onload=()=>{setTimeout(()=>window.print(),300);};<\/script>
+</body></html>`;
+  return html;
+}
+window.buildQuoteHTML = buildQuoteHTML;
+
+window.generateQuote = () => {
+  const html = buildQuoteHTML();
+  const w = window.open('', '_blank');
+  if (!w) { toast('فضلاً اسمح بالنوافذ المنبثقة للطباعة', 'err'); return; }
+  w.document.write(html);
+  w.document.close();
+};
+
+initQuote();
+
+loadItems();
+load('purchases');
+load('sales');
+load('expenses');
+</script>
+</body>
+</html>

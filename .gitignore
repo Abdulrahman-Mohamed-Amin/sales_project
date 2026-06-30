@@ -1,0 +1,9 @@
+# أسرار / إعدادات محلية — لا تُرفع إلى GitHub
+.mcp.json
+.claude/settings.local.json
+
+# ملفات مؤقتة
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
