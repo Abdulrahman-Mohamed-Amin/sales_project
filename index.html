@@ -137,6 +137,20 @@
   }
   .item-row { display: flex; gap: 8px; }
   .item-row select { flex: 1; }
+
+  /* حقل بحث الأصناف (combobox) */
+  .combo { position: relative; flex: 1; }
+  .combo-input { width: 100%; }
+  .combo-list {
+    position: absolute; top: calc(100% + 4px); inset-inline-start: 0; inset-inline-end: 0; z-index: 45;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: var(--shadow-lg); max-height: 240px; overflow-y: auto; display: none;
+  }
+  .combo-list.show { display: block; }
+  .combo-item { padding: 10px 13px; cursor: pointer; font-size: 14px; border-bottom: 1px solid var(--border); }
+  .combo-item:last-child { border-bottom: none; }
+  .combo-item:hover, .combo-item.active { background: var(--gold-soft); color: var(--gold-dark); font-weight: 700; }
+  .combo-empty { padding: 14px; text-align: center; color: var(--muted); font-size: 13px; }
   .btn-new-item {
     width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
     background: var(--gold-soft); border: 1px solid var(--gold); color: var(--gold-dark); font-size: 20px;
@@ -232,22 +246,32 @@
   /* شاشة تسجيل الدخول */
   .auth-screen {
     position: fixed; inset: 0; z-index: 500;
-    display: flex; align-items: center; justify-content: center; padding: 20px;
-    background: linear-gradient(135deg, #1a1d24, #2c3340);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+    background: linear-gradient(135deg, #14171d, #2c3340);
   }
+  .auth-screen.show { display: flex; }
   .auth-card {
-    background: var(--surface); border-radius: 20px; box-shadow: var(--shadow-lg);
-    width: 100%; max-width: 400px; padding: 32px 28px; text-align: center;
+    display: flex; width: 100%; max-width: 840px; min-height: 470px;
+    background: var(--surface); border-radius: 22px; overflow: hidden; box-shadow: var(--shadow-lg);
   }
-  .auth-logo img { height: 64px; margin-bottom: 14px; }
-  .auth-card h1 { font-size: 22px; font-weight: 900; color: var(--gold-dark); }
-  .auth-sub { color: var(--muted); font-size: 13px; margin: 6px 0 22px; }
-  #authForm { display: flex; flex-direction: column; gap: 14px; text-align: right; }
-  .auth-btn { width: 100%; height: 46px; margin-top: 6px; }
+  .auth-form-side {
+    flex: 1; padding: 44px 38px; display: flex; flex-direction: column; justify-content: center;
+  }
+  .auth-form-side h1 { font-size: 27px; font-weight: 900; color: var(--text); }
+  .auth-sub { color: var(--muted); font-size: 14px; margin: 8px 0 26px; }
+  #authForm { display: flex; flex-direction: column; gap: 16px; }
+  .auth-btn { width: 100%; height: 48px; margin-top: 8px; font-size: 16px; }
   .auth-err { color: var(--red); font-size: 13px; font-weight: 700; min-height: 18px; text-align: center; }
-  .auth-toggle { margin-top: 18px; font-size: 13px; color: var(--muted); }
-  .auth-toggle a { color: var(--gold-dark); font-weight: 800; text-decoration: none; margin-inline-start: 6px; }
-  .auth-toggle a:hover { text-decoration: underline; }
+  .auth-gold-side {
+    flex: 1; background: linear-gradient(160deg, var(--gold), var(--gold-dark));
+    color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 40px 30px; gap: 16px;
+  }
+  .auth-gold-side img { height: 76px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.2)); }
+  .auth-gold-side h2 { font-size: 23px; font-weight: 900; }
+  .auth-gold-side p { font-size: 14px; opacity: .95; line-height: 1.8; max-width: 270px; }
+
+  /* زر تسجيل الخروج */
   .nav-logout {
     margin: 8px 12px; padding: 11px 16px; border-radius: 10px; cursor: pointer;
     background: transparent; border: 1px solid var(--border); color: var(--red);
@@ -255,6 +279,18 @@
     display: flex; align-items: center; gap: 8px; justify-content: center;
   }
   .nav-logout:hover { background: #fdeaea; border-color: var(--red); }
+
+  /* إخفاء أزرار التعديل/الحذف لغير الأدمن */
+  body.role-user .icon-btn.edit, body.role-user .icon-btn.del,
+  body.role-user .mini.edit, body.role-user .mini.del { display: none !important; }
+  /* إخفاء زر إضافة صنف لغير الأدمن (لا يملك صلاحية إضافة صنف) */
+  body.role-user .btn-new-item { display: none !important; }
+
+  @media (max-width: 760px) {
+    .auth-gold-side { display: none; }
+    .auth-card { max-width: 420px; min-height: auto; }
+    .auth-form-side { padding: 36px 28px; }
+  }
 
   /* نموذج عرض السعر */
   .quote-form { padding: 20px; display: flex; flex-direction: column; gap: 20px; }
@@ -323,18 +359,22 @@
 <!-- شاشة تسجيل الدخول -->
 <div class="auth-screen" id="authScreen">
   <div class="auth-card">
-    <div class="auth-logo"><img src="logo_gold.png" alt="logo" onerror="this.style.display='none'" /></div>
-    <h1 id="authTitle">تسجيل الدخول</h1>
-    <p class="auth-sub" id="authSub">ادخل بياناتك للوصول إلى برنامج المشتريات والمبيعات</p>
-    <form id="authForm">
-      <div class="q-field"><label>البريد الإلكتروني</label><input id="auth_email" type="email" placeholder="email@example.com" required autocomplete="username" /></div>
-      <div class="q-field"><label>كلمة المرور</label><input id="auth_pass" type="password" placeholder="••••••••" required minlength="6" autocomplete="current-password" /></div>
-      <div class="auth-err" id="authErr"></div>
-      <button type="submit" class="btn-add auth-btn" id="authBtn">دخول</button>
-    </form>
-    <div class="auth-toggle">
-      <span id="authToggleText">ليس لديك حساب؟</span>
-      <a href="#" id="authToggle">إنشاء حساب جديد</a>
+    <!-- الفورم (يمين) -->
+    <div class="auth-form-side">
+      <h1>تسجيل الدخول</h1>
+      <p class="auth-sub">مرحباً بك 👋 ادخل بياناتك للمتابعة</p>
+      <form id="authForm">
+        <div class="q-field"><label>اسم المستخدم</label><input id="auth_user" placeholder="اسم المستخدم" required autocomplete="username" /></div>
+        <div class="q-field"><label>كلمة المرور</label><input id="auth_pass" type="password" placeholder="••••••" required autocomplete="current-password" /></div>
+        <div class="auth-err" id="authErr"></div>
+        <button type="submit" class="btn-add auth-btn" id="authBtn">دخول</button>
+      </form>
+    </div>
+    <!-- الجانب الذهبي (شمال) -->
+    <div class="auth-gold-side">
+      <img src="logo_white.png" alt="" onerror="this.style.display='none'" />
+      <h2>برنامج المشتريات والمبيعات</h2>
+      <p>إدارة مشترياتك ومبيعاتك ومصاريفك وعروض الأسعار في مكانٍ واحد.</p>
     </div>
   </div>
 </div>
@@ -389,7 +429,7 @@
               <option value="expenses">🧾 مصاريف</option>
             </select>
           </div>
-          <div class="fg"><label>بحث</label><input class="search" id="f-search" placeholder="صنف / بيان / نوع سيارة..." /></div>
+          <div class="fg"><label>بحث</label><input class="search" id="f-search" placeholder="صنف / بيان / وحدة..." /></div>
           <div class="fg"><label>من تاريخ</label><input type="date" id="f-from" /></div>
           <div class="fg"><label>إلى تاريخ</label><input type="date" id="f-to" /></div>
           <button class="btn-clear" type="button" onclick="window.clearDashFilter()">✕ مسح</button>
@@ -397,7 +437,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>النوع</th><th>البيان / الصنف</th><th>نوع السيارة</th><th>الكمية</th><th>المبلغ</th><th>التاريخ</th></tr></thead>
+            <thead><tr><th>النوع</th><th>البيان / الصنف</th><th>الوحدة</th><th>الكمية</th><th>المبلغ</th><th>التاريخ</th></tr></thead>
             <tbody id="tbody-dashboard"></tbody>
             <tfoot><tr><td colspan="4">إجمالي المعروض</td><td class="total-cell" id="dash-total">0</td><td></td></tr></tfoot>
           </table>
@@ -413,16 +453,22 @@
           <input type="hidden" name="id" />
           <div class="field"><label>الصنف</label>
             <div class="item-row">
-              <select name="item" data-items required></select>
+              <div class="combo" data-combo>
+                <input type="text" name="item" class="combo-input" placeholder="🔍 ابحث أو اختر الصنف..." autocomplete="off" required />
+                <div class="combo-list"></div>
+              </div>
               <button type="button" class="btn-new-item" title="إضافة صنف جديد" onclick="window.addItem()">➕</button>
             </div>
           </div>
-          <div class="field car-field" style="display:none"><label>🚛 نوع السيارة</label>
+          <div class="field"><label>📦 الوحدة</label>
             <select name="car_type">
               <option value="">— اختر —</option>
               <option value="ديانة">ديانة</option>
               <option value="سكس">سكس</option>
               <option value="تريلا">تريلا</option>
+              <option value="متر">متر</option>
+              <option value="حبة">حبة</option>
+              <option value="كيس">كيس</option>
             </select>
           </div>
           <div class="field"><label>الكمية</label><input name="quantity" type="number" step="any" min="0" placeholder="0" required /></div>
@@ -432,7 +478,7 @@
         </form>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>الصنف</th><th>نوع السيارة</th><th>الكمية</th><th>سعر الحبة</th><th>الإجمالي</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+            <thead><tr><th>الصنف</th><th>الوحدة</th><th>الكمية</th><th>سعر الحبة</th><th>الإجمالي</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
             <tbody id="tbody-purchases"></tbody>
             <tfoot><tr><td colspan="4">الإجمالي الكلي</td><td class="total-cell" id="foot-purchases">0</td><td colspan="2"></td></tr></tfoot>
           </table>
@@ -448,16 +494,22 @@
           <input type="hidden" name="id" />
           <div class="field"><label>الصنف</label>
             <div class="item-row">
-              <select name="item" data-items required></select>
+              <div class="combo" data-combo>
+                <input type="text" name="item" class="combo-input" placeholder="🔍 ابحث أو اختر الصنف..." autocomplete="off" required />
+                <div class="combo-list"></div>
+              </div>
               <button type="button" class="btn-new-item" title="إضافة صنف جديد" onclick="window.addItem()">➕</button>
             </div>
           </div>
-          <div class="field car-field" style="display:none"><label>🚛 نوع السيارة</label>
+          <div class="field"><label>📦 الوحدة</label>
             <select name="car_type">
               <option value="">— اختر —</option>
               <option value="ديانة">ديانة</option>
               <option value="سكس">سكس</option>
               <option value="تريلا">تريلا</option>
+              <option value="متر">متر</option>
+              <option value="حبة">حبة</option>
+              <option value="كيس">كيس</option>
             </select>
           </div>
           <div class="field"><label>الكمية</label><input name="quantity" type="number" step="any" min="0" placeholder="0" required /></div>
@@ -467,7 +519,7 @@
         </form>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>الصنف</th><th>نوع السيارة</th><th>الكمية</th><th>سعر الحبة</th><th>الإجمالي</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+            <thead><tr><th>الصنف</th><th>الوحدة</th><th>الكمية</th><th>سعر الحبة</th><th>الإجمالي</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
             <tbody id="tbody-sales"></tbody>
             <tfoot><tr><td colspan="4">الإجمالي الكلي</td><td class="total-cell" id="foot-sales">0</td><td colspan="2"></td></tr></tfoot>
           </table>
@@ -582,11 +634,10 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
 const SUPABASE_URL = 'https://vilubsgomjkopkdmituy.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_jhWunpDaNpkudGTaGDkp5Q_VmjuSEb2';
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+// يُحمّل لاحقاً بشكل غير متزامن حتى لا يتعطّل باقي البرنامج (التنقل/النماذج) إن تأخّر الاتصال
+let sb = null;
 
 const fmt = n => Number(n || 0).toLocaleString('ar-EG', { maximumFractionDigits: 2 });
 const today = () => new Date().toISOString().slice(0, 10);
@@ -604,6 +655,12 @@ function toast(msg, type = 'ok') {
   t.textContent = msg;
   t.className = 'toast show ' + type;
   setTimeout(() => t.className = 'toast', 2500);
+}
+
+// التأكد من جاهزية الاتصال قبل أي عملية على قاعدة البيانات
+function dbReady() {
+  if (!sb) { toast('جارٍ الاتصال بقاعدة البيانات، حاول بعد لحظة...', 'err'); return false; }
+  return true;
 }
 
 // القائمة الجانبية (الجوال)
@@ -641,34 +698,44 @@ document.querySelectorAll('form .entry input[type=date], input[name$="_date"]').
   el.addEventListener('change', renderDashboard);
 });
 
-// ===== منطق نوع السيارة =====
-// تطبيع النص: إزالة الهمزات وتوحيد أشكال الألف حتى تعمل المطابقة مع كل التهجئات
+// تطبيع النص: إزالة الهمزات وتوحيد أشكال الألف (يُستخدم في البحث)
 const normalize = s => String(s || '')
-  .replace(/[ءأإآؤئ]/g, 'ا')   // توحيد الهمزات والألف
-  .replace(/[ً-ْ]/g, '') // إزالة التشكيل
+  .replace(/[ءأإآؤئ]/g, 'ا')
+  .replace(/[ً-ْ]/g, '')
   .replace(/\s+/g, '');
-const CAR_KEYWORDS = ['بطح', 'دفان', 'صبيز']; // جذور تغطي: بطحا/بطحاء، دفان، صبيز
-const needsCar = name => { const n = normalize(name); return CAR_KEYWORDS.some(k => n.includes(normalize(k))); };
 
-function toggleCarField(form) {
-  const sel = form.querySelector('select[data-items]');
-  const carField = form.querySelector('.car-field');
-  const carSelect = form.querySelector('select[name=car_type]');
-  if (!carField) return;
-  if (needsCar(sel.value)) {
-    carField.style.display = '';
-    carSelect.setAttribute('required', 'required');
-  } else {
-    carField.style.display = 'none';
-    carSelect.removeAttribute('required');
-    carSelect.value = '';
-  }
+// ===== حقل بحث الأصناف (combobox) — يبحث في كامل الأصناف عند الكتابة =====
+function setupCombos() {
+  document.querySelectorAll('.combo[data-combo]').forEach(combo => {
+    const input = combo.querySelector('.combo-input');
+    const list = combo.querySelector('.combo-list');
+
+    const renderList = () => {
+      const f = normalize(input.value);
+      const matches = state.items.filter(it => normalize(it.name).includes(f));
+      if (!state.items.length) list.innerHTML = `<div class="combo-empty">لا توجد أصناف بعد</div>`;
+      else if (!matches.length) list.innerHTML = `<div class="combo-empty">لا يوجد صنف مطابق 🔍</div>`;
+      else list.innerHTML = matches.map(it => `<div class="combo-item" data-val="${esc(it.name)}">${esc(it.name)}</div>`).join('');
+    };
+    const open = () => { renderList(); list.classList.add('show'); };
+    const close = () => list.classList.remove('show');
+
+    input.addEventListener('focus', open);
+    input.addEventListener('input', open);
+    input.addEventListener('mousedown', open);
+    // mousedown يسبق blur حتى يُسجَّل الاختيار قبل إغلاق القائمة
+    list.addEventListener('mousedown', e => {
+      const item = e.target.closest('.combo-item');
+      if (!item) return;
+      e.preventDefault();
+      input.value = item.dataset.val;
+      close();
+    });
+    input.addEventListener('blur', () => setTimeout(close, 150));
+    input.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  });
 }
-
-document.querySelectorAll('form[data-form="purchases"], form[data-form="sales"]').forEach(form => {
-  const sel = form.querySelector('select[data-items]');
-  sel.addEventListener('change', () => toggleCarField(form));
-});
+setupCombos();
 
 // ===== الأصناف الثابتة =====
 async function loadItems() {
@@ -699,7 +766,8 @@ window.editItem = (id) => {
   line.innerHTML = `
     <input class="edit-field" id="edit-${id}" value="${esc(it.name)}" />
     <button type="button" class="mini save" title="حفظ" onclick="window.saveItem(${id})">💾</button>
-    <button type="button" class="mini del" title="إلغاء" onclick="window.renderItemsListGlobal()">✕</button>`;
+    <button type="button" class="m
+    ini del" title="إلغاء" onclick="window.renderItemsListGlobal()">✕</button>`;
   const f = document.getElementById('edit-' + id);
   f.focus(); f.select();
   f.addEventListener('keydown', e => { if (e.key === 'Enter') window.saveItem(id); });
@@ -707,6 +775,8 @@ window.editItem = (id) => {
 window.renderItemsListGlobal = () => renderItemsList();
 
 window.saveItem = async (id) => {
+  if (!dbReady()) return;
+  if (!isAdmin) { toast('لا تملك صلاحية التعديل', 'err'); return; }
   const it = state.items.find(x => x.id === id);
   const newName = document.getElementById('edit-' + id).value.trim();
   if (!newName) { toast('الاسم لا يمكن أن يكون فارغاً', 'err'); return; }
@@ -724,6 +794,8 @@ window.saveItem = async (id) => {
 };
 
 window.deleteItem = async (id) => {
+  if (!dbReady()) return;
+  if (!isAdmin) { toast('لا تملك صلاحية الحذف', 'err'); return; }
   const it = state.items.find(x => x.id === id);
   if (!it) return;
   if (!confirm(`حذف الصنف "${it.name}"؟\n(لن يؤثر على العمليات المسجّلة سابقاً)`)) return;
@@ -742,7 +814,6 @@ function fillItemSelects() {
       : `<option value="" disabled selected>لا توجد أصناف — أضف صنفاً ➕</option>`;
     if (current && state.items.some(it => it.name === current)) sel.value = current;
   });
-  document.querySelectorAll('form[data-form="purchases"], form[data-form="sales"]').forEach(toggleCarField);
 }
 
 // مودال إضافة صنف
@@ -750,6 +821,7 @@ const itemModal = document.getElementById('itemModal');
 const itemNameInput = document.getElementById('itemNameInput');
 
 window.addItem = () => {
+  if (!isAdmin) { toast('لا تملك صلاحية إضافة صنف', 'err'); return; }
   itemModal.classList.add('show');
   itemNameInput.value = '';
   setTimeout(() => itemNameInput.focus(), 50);
@@ -762,6 +834,8 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') window.close
 
 document.getElementById('itemForm').addEventListener('submit', async e => {
   e.preventDefault();
+  if (!dbReady()) return;
+  if (!isAdmin) { toast('لا تملك صلاحية إضافة صنف', 'err'); return; }
   const name = itemNameInput.value.trim();
   if (!name) return;
   if (state.items.some(it => it.name === name)) { toast('الصنف موجود مسبقاً', 'err'); return; }
@@ -774,7 +848,7 @@ document.getElementById('itemForm').addEventListener('submit', async e => {
   itemNameInput.value = '';
   itemNameInput.focus();
   await loadItems();
-  document.querySelectorAll('select[data-items]').forEach(sel => { sel.value = name; });
+  document.querySelectorAll('.combo-input').forEach(i => { i.value = name; });
 });
 
 async function load(key) {
@@ -811,7 +885,7 @@ function render(key) {
     tbody.innerHTML = rows.map(r => `
       <tr>
         <td>${esc(r.item)}</td>
-        <td>${r.car_type ? '🚛 ' + esc(r.car_type) : '—'}</td>
+        <td>${r.car_type ? '📦 ' + esc(r.car_type) : '—'}</td>
         <td>${fmt(r.quantity)}</td>
         <td>${fmt(r.unit_price)} ر.س</td>
         <td class="total-cell">${fmt(r.total)} ر.س</td>
@@ -852,7 +926,7 @@ function renderDashboard() {
 
   if (!items.length) { tbody.innerHTML = `<tr><td class="empty" colspan="6">لا توجد عمليات مطابقة 🔍</td></tr>`; return; }
   tbody.innerHTML = items.map(r => `
-    <tr><td>${r.type}</td><td>${esc(r.name)}</td><td>${r.car ? '🚛 ' + esc(r.car) : '—'}</td><td>${r.qty}</td><td class="total-cell">${fmt(r.amount)} ر.س</td><td>${r.date || ''}</td></tr>`).join('');
+    <tr><td>${r.type}</td><td>${esc(r.name)}</td><td>${r.car ? '📦 ' + esc(r.car) : '—'}</td><td>${r.qty}</td><td class="total-cell">${fmt(r.amount)} ر.س</td><td>${r.date || ''}</td></tr>`).join('');
 }
 
 window.clearDashFilter = () => {
@@ -880,18 +954,20 @@ function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','
 document.querySelectorAll('form.entry').forEach(form => {
   form.addEventListener('submit', async e => {
     e.preventDefault();
+    if (!dbReady()) return;
     const key = form.dataset.form;
     const cfg = CONFIG[key];
     const btn = form.querySelector('button[type=submit]');
     const fd = new FormData(form);
     const id = fd.get('id');
+    if (id && !isAdmin) { toast('لا تملك صلاحية التعديل', 'err'); return; }
 
     let payload;
     if (cfg.kind === 'expense') {
       payload = { description: fd.get('description'), quantity: Number(fd.get('quantity')), unit_price: Number(fd.get('unit_price')), expense_date: fd.get('expense_date') };
     } else {
       payload = { item: fd.get('item'), quantity: Number(fd.get('quantity')), unit_price: Number(fd.get('unit_price')), [cfg.dateCol]: fd.get(cfg.dateCol) };
-      payload.car_type = needsCar(fd.get('item')) ? (fd.get('car_type') || null) : null;
+      payload.car_type = fd.get('car_type') || null;
     }
 
     btn.disabled = true;
@@ -905,7 +981,6 @@ document.querySelectorAll('form.entry').forEach(form => {
     form.reset();
     form.querySelector('[name=id]').value = '';
     form.querySelectorAll('input[type=date]').forEach(i => i.value = today());
-    if (cfg.kind !== 'expense') toggleCarField(form);
     btn.textContent = '➕ إضافة';
     load(key);
   });
@@ -927,14 +1002,15 @@ window.editRow = (key, id) => {
     form.querySelector('[name=quantity]').value = row.quantity;
     form.querySelector('[name=unit_price]').value = row.unit_price;
     form.querySelector(`[name=${cfg.dateCol}]`).value = row[cfg.dateCol];
-    toggleCarField(form);
-    if (needsCar(row.item)) form.querySelector('[name=car_type]').value = row.car_type || '';
+    form.querySelector('[name=car_type]').value = row.car_type || '';
   }
   form.querySelector('button[type=submit]').textContent = '💾 حفظ التعديل';
   form.scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
 window.delRow = async (key, id) => {
+  if (!dbReady()) return;
+  if (!isAdmin) { toast('لا تملك صلاحية الحذف', 'err'); return; }
   if (!confirm('هل تريد حذف هذا السجل؟')) return;
   const { error } = await sb.from(CONFIG[key].table).delete().eq('id', id);
   if (error) { toast('خطأ في الحذف: ' + error.message, 'err'); return; }
@@ -1105,76 +1181,76 @@ window.generateQuote = () => {
 
 initQuote();
 
-// ===== المصادقة (تسجيل الدخول) =====
-let authMode = 'login';
+// ===== المصادقة والصلاحيات =====
+const AUTH_DOMAIN = '@madain.sa'; // يُضاف تلقائياً لاسم المستخدم
 const authScreen = document.getElementById('authScreen');
 const authForm = document.getElementById('authForm');
 const authErr = document.getElementById('authErr');
+let isAdmin = false;
 let appStarted = false;
+let userName = '';
 
-function startApp(user) {
-  authScreen.style.display = 'none';
-  document.getElementById('navFoot').textContent = user.email;
-  if (appStarted) return;
-  appStarted = true;
-  loadItems();
-  load('purchases');
-  load('sales');
-  load('expenses');
+async function loadRole(userId) {
+  const { data } = await sb.from('profiles').select('role,name').eq('id', userId).single();
+  isAdmin = !!(data && data.role === 'admin');
+  userName = (data && data.name) || '';
 }
 
-async function checkSession() {
+function applyRole(email) {
+  document.body.classList.toggle('role-admin', isAdmin);
+  document.body.classList.toggle('role-user', !isAdmin);
+  const name = userName || (email || '').split('@')[0];
+  document.getElementById('navFoot').textContent = `👤 ${name} — ${isAdmin ? 'أدمن (كل الصلاحيات)' : 'مستخدم'}`;
+}
+
+async function startApp(user) {
+  await loadRole(user.id);
+  applyRole(user.email);
+  authScreen.classList.remove('show');
+  if (!appStarted) {
+    appStarted = true;
+    loadItems();
+    load('purchases');
+    load('sales');
+    load('expenses');
+  }
+}
+
+async function initAuth() {
   const { data } = await sb.auth.getSession();
   if (data.session) startApp(data.session.user);
-  else authScreen.style.display = 'flex';
+  else authScreen.classList.add('show');
 }
-
-// التبديل بين دخول / إنشاء حساب
-document.getElementById('authToggle').addEventListener('click', e => {
-  e.preventDefault();
-  authMode = authMode === 'login' ? 'signup' : 'login';
-  authErr.textContent = '';
-  const login = authMode === 'login';
-  document.getElementById('authTitle').textContent = login ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
-  document.getElementById('authSub').textContent = login ? 'ادخل بياناتك للوصول إلى البرنامج' : 'أنشئ حسابك للبدء';
-  document.getElementById('authBtn').textContent = login ? 'دخول' : 'إنشاء الحساب';
-  document.getElementById('authToggleText').textContent = login ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟';
-  document.getElementById('authToggle').textContent = login ? 'إنشاء حساب جديد' : 'تسجيل الدخول';
-  document.getElementById('auth_pass').autocomplete = login ? 'current-password' : 'new-password';
-});
 
 authForm.addEventListener('submit', async e => {
   e.preventDefault();
   authErr.textContent = '';
-  const email = document.getElementById('auth_email').value.trim();
+  if (!sb) { authErr.textContent = 'جارٍ الاتصال بقاعدة البيانات، حاول بعد لحظة...'; return; }
+  let email = document.getElementById('auth_user').value.trim();
+  if (email && !email.includes('@')) email += AUTH_DOMAIN;
   const password = document.getElementById('auth_pass').value;
   const btn = document.getElementById('authBtn');
   btn.disabled = true;
-
-  if (authMode === 'login') {
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    btn.disabled = false;
-    if (error) { authErr.textContent = 'بيانات الدخول غير صحيحة'; return; }
-    startApp(data.user);
-  } else {
-    const { data, error } = await sb.auth.signUp({ email, password });
-    btn.disabled = false;
-    if (error) { authErr.textContent = error.message; return; }
-    if (data.session) {
-      startApp(data.user); // الدخول مباشرة (تأكيد الإيميل معطّل)
-    } else {
-      authErr.style.color = 'var(--green)';
-      authErr.textContent = '✅ تم إنشاء الحساب! تحقق من بريدك لتأكيد الحساب ثم سجّل الدخول.';
-    }
-  }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false;
+  if (error) { authErr.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة'; return; }
+  startApp(data.user);
 });
 
 window.logout = async () => {
-  await sb.auth.signOut();
+  if (sb) await sb.auth.signOut();
   location.reload();
 };
 
-checkSession();
+// تحميل مكتبة Supabase ثم بدء المصادقة
+import('https://esm.sh/@supabase/supabase-js@2')
+  .then(({ createClient }) => {
+    sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, storage: window.localStorage }
+    });
+    initAuth();
+  })
+  .catch(() => { authScreen.classList.add('show'); authErr.textContent = 'تعذّر الاتصال — تأكد من الإنترنت'; });
 </script>
 </body>
 </html>

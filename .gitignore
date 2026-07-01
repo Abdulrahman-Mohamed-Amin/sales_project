@@ -1,6 +1,7 @@
 # أسرار / إعدادات محلية — لا تُرفع إلى GitHub
 .mcp.json
 .claude/settings.local.json
+auth.local.js
 
 # ملفات مؤقتة
 *.tmp
